@@ -51,7 +51,7 @@ const client = new Client({
             '--no-zygote',
             '--disable-gpu'
         ],
-        executablePath: '/usr/bin/chromium-browser',
+        executablePath: '/usr/bin/chromium', // Cambiado de chromium-browser a chromium
     }
 });
 
