@@ -1,5 +1,5 @@
 const http = require('http');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
@@ -56,12 +56,15 @@ async function conectarBD() {
 
 conectarBD();
 
-// --- 3. BOT DE WHATSAPP (Ultra ligero, sin navegador ni Chrome) ---
-// --- 3. BOT DE WHATSAPP (Con reconexión controlada) ---
+// --- 3. BOT DE WHATSAPP (Con versión automática de WhatsApp) ---
 async function iniciarBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+    
+    // Obtiene la versión más reciente de WhatsApp Web para evitar el error 405
+    const { version } = await fetchLatestBaileysVersion();
 
     sock = makeWASocket({
+        version,
         auth: state,
         logger: pino({ level: 'silent' })
     });
@@ -90,13 +93,14 @@ async function iniciarBot() {
             if (shouldReconnect) {
                 setTimeout(() => {
                     iniciarBot();
-                }, 3000); // Espera 3 segundos antes de reintentar para evitar bucles pesados
+                }, 3000);
             } else {
                 console.log('❌ Sesión cerrada. Es necesario volver a escanear el QR.');
             }
         }
     });
 
+    // (Tus manejadores de mensajes y MongoDB continúan abajo...)
     // (El resto de tus eventos de mensajes y MongoDB se mantienen igual aquí abajo...)
 
     const sesionesUsuario = {};
