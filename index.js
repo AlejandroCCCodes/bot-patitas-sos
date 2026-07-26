@@ -50,8 +50,8 @@ const client = new Client({
             '--no-first-run',
             '--no-zygote',
             '--disable-gpu'
-        ],
-        executablePath: '/usr/bin/chromium', // Cambiado de chromium-browser a chromium
+        ]
+        // Se eliminó 'executablePath' para que use el navegador integrado automáticamente
     }
 });
 
