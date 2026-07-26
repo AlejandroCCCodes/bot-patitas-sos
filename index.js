@@ -57,13 +57,13 @@ async function conectarBD() {
 conectarBD();
 
 // --- 3. BOT DE WHATSAPP (Ultra ligero, sin navegador ni Chrome) ---
+// --- 3. BOT DE WHATSAPP (Con reconexión controlada) ---
 async function iniciarBot() {
-    // Guarda la sesión en la carpeta 'auth_info' para no pedir QR cada vez
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
     sock = makeWASocket({
         auth: state,
-        logger: pino({ level: 'silent' }) // Mantiene la consola limpia
+        logger: pino({ level: 'silent' })
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -78,18 +78,26 @@ async function iniciarBot() {
         }
 
         if (connection === 'open') {
-            ultimoQR = ''; // Limpia el QR al conectarse con éxito
+            ultimoQR = ''; 
             console.log('🚀 ¡El bot de PATITAS SOS está 100% activo y conectado en la nube!');
         }
 
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('⚠️ Conexión cerrada. Intentando reconectar...', shouldReconnect);
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            console.log(`⚠️ Conexión cerrada (Código: ${statusCode}). Reintentando en 3 segundos...`);
+            
             if (shouldReconnect) {
-                iniciarBot();
+                setTimeout(() => {
+                    iniciarBot();
+                }, 3000); // Espera 3 segundos antes de reintentar para evitar bucles pesados
+            } else {
+                console.log('❌ Sesión cerrada. Es necesario volver a escanear el QR.');
             }
         }
     });
+
+    // (El resto de tus eventos de mensajes y MongoDB se mantienen igual aquí abajo...)
 
     const sesionesUsuario = {};
     const TIEMPO_MAXIMO = 5 * 60 * 1000;
