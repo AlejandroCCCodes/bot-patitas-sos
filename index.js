@@ -1,9 +1,18 @@
+const http = require('http');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
-// Enlace oficial de MongoDB Atlas para PATITAS SOS
-// Lee la contraseña y el enlace de forma segura desde las variables de Render
+// --- 1. SERVIDOR WEB INTERNO PARA RENDER ---
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('🐾 ¡El bot de PATITAS SOS está activo y funcionando en la nube 24/7!\n');
+}).listen(PORT, () => {
+    console.log(`🌐 Servidor web escuchando en el puerto ${PORT}`);
+});
+
+// --- 2. CONEXIÓN A MONGODB ATLAS ---
 const uri = process.env.MONGO_URI;
 
 const clientMongo = new MongoClient(uri, {
@@ -29,6 +38,7 @@ async function conectarBD() {
 
 conectarBD();
 
+// --- 3. CONFIGURACIÓN DEL BOT DE WHATSAPP (CON SOPORTE PARA CHROMIUM EN LINUX) ---
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -41,14 +51,13 @@ const client = new Client({
             '--no-zygote',
             '--disable-gpu'
         ],
-        executablePath: '/usr/bin/chromium-browser', // Ruta donde Render instalará el navegador
+        executablePath: '/usr/bin/chromium-browser',
     }
 });
 
-
 client.on('qr', (qr) => {
+    console.log('📌 ESCANEA ESTE CÓDIGO QR DESDE TUS LOGS DE RENDER:');
     qrcode.generate(qr, { small: true });
-    console.log('📌 Escanea el QR para activar el bot.');
 });
 
 client.on('ready', () => {
@@ -98,7 +107,7 @@ client.on('message', async msg => {
         };
         
         try {
-            const media = MessageMedia.fromFilePath('./intro.jpg'); 
+            const media = MessageMedia.fromFilePath('./intro.mp4'); 
             await client.sendMessage(chatId, media, { 
                 caption: '¡Hola! 🐶 Gracias por ayudarnos con PATITAS SOS. Queremos ofrecer paseos y cuidados en Cerro de Pasco para financiar el rescate de perritos de la calle.\n\n¿Nos regalas 1 minuto? *Respóndeme solo con el número de tu opción (1, 2 o 3):*\n\n*Pregunta 1:* ¿Con qué frecuencia tienes tiempo para pasear a tu perrito?\n1️⃣ Todos los días\n2️⃣ 2 a 3 veces por semana\n3️⃣ Casi nunca por falta de tiempo' 
             });
