@@ -3,11 +3,29 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
-// --- 1. SERVIDOR WEB INTERNO PARA RENDER ---
+let ultimoQR = ''; // Variable para almacenar el código QR actual
+
+// --- 1. SERVIDOR WEB (Muestra el QR en la web y mantiene vivo a Render) ---
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('🐾 ¡El bot de PATITAS SOS está activo y funcionando en la nube 24/7!\n');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    if (ultimoQR) {
+        res.end(`
+            <div style="text-align: center; font-family: Arial, sans-serif; margin-top: 50px;">
+                <h1>🐾 PATITAS SOS - Vinculación de WhatsApp</h1>
+                <p>Abre WhatsApp en tu celular, ve a <b>Dispositivos vinculados</b> y escanea este código:</p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(ultimoQR)}" alt="QR WhatsApp" style="border: 5px solid #ccc; border-radius: 10px; padding: 10px; background: white;" />
+                <p style="color: gray; margin-top: 20px;">Si ya lo escaneaste, puedes cerrar esta pestaña.</p>
+            </div>
+        `);
+    } else {
+        res.end(`
+            <div style="text-align: center; font-family: Arial, sans-serif; margin-top: 50px;">
+                <h1>⏳ El bot está iniciando el navegador...</h1>
+                <p>Actualiza esta página en unos 10 o 15 segundos para ver el código QR.</p>
+            </div>
+        `);
+    }
 }).listen(PORT, () => {
     console.log(`🌐 Servidor web escuchando en el puerto ${PORT}`);
 });
@@ -38,7 +56,7 @@ async function conectarBD() {
 
 conectarBD();
 
-// --- 3. CONFIGURACIÓN DEL BOT DE WHATSAPP (CON SOPORTE PARA CHROMIUM EN LINUX) ---
+// --- 3. CONFIGURACIÓN DEL BOT DE WHATSAPP (Optimizado para bajo consumo de RAM en Render) ---
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -50,20 +68,20 @@ const client = new Client({
             '--no-first-run',
             '--no-zygote',
             '--disable-gpu',
-            '--single-process', // Obliga a Chrome a correr en un solo proceso para gastar menos RAM
-            '--disable-extensions',
-            '--disable-dev-shm-usage'
+            '--single-process',
+            '--disable-extensions'
         ]
     }
 });
 
 client.on('qr', (qr) => {
-    console.log('📌 ESCANEA ESTE CÓDIGO QR DESDE TUS LOGS DE RENDER:');
+    ultimoQR = qr; // Guarda el QR para visualizarlo en la web
+    console.log('📌 NUEVO CÓDIGO QR GENERADO (También disponible en tu URL de Render)');
     qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
-    console.log('🚀 ¡El bot de PATITAS SOS está 100% activo y listo!');
+    console.log('🚀 ¡El bot de PATITAS SOS está 100% activo y listo en la nube!');
 });
 
 const sesionesUsuario = {};
