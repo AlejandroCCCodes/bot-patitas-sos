@@ -49,7 +49,10 @@ const client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--single-process', // Obliga a Chrome a correr en un solo proceso para gastar menos RAM
+            '--disable-extensions',
+            '--disable-dev-shm-usage'
         ]
     }
 });
