@@ -1,15 +1,15 @@
 {
   "name": "bot-patitas-sos",
   "version": "1.0.0",
-  "description": "Bot de encuesta para Patitas SOS",
+  "description": "Bot de WhatsApp para Patitas SOS",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "puppeteer browsers install chrome"
+    "start": "node index.js"
   },
   "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.12",
     "mongodb": "^6.3.0",
-    "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.23.0"
+    "pino": "^8.19.0",
+    "qrcode-terminal": "^0.12.0"
   }
 }
