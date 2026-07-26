@@ -3,7 +3,8 @@ const qrcode = require('qrcode-terminal');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
 // Enlace oficial de MongoDB Atlas para PATITAS SOS
-const uri = "mongodb+srv://deyvidcalzada2_db_user:T9rghJGNd7QcmMAZ@patitassos.ednxzrk.mongodb.net/?appName=PatitasSOS";
+// Lee la contraseña y el enlace de forma segura desde las variables de Render
+const uri = process.env.MONGO_URI;
 
 const clientMongo = new MongoClient(uri, {
     serverApi: {
