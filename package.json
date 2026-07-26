@@ -4,7 +4,8 @@
   "description": "Bot de encuesta para Patitas SOS",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "postinstall": "puppeteer browsers install chrome"
   },
   "dependencies": {
     "mongodb": "^6.3.0",
