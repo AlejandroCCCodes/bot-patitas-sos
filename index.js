@@ -111,7 +111,7 @@ async function iniciarBot() {
         const mensajeTexto = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
         const texto = mensajeTexto.trim().toLowerCase();
 
-        // 1. DISPARADOR INICIAL (ENVÍA intro.jpg Y PREGUNTA 1)
+        // 1. DISPARADOR INICIAL (ENVÍA intro.jpg CON EL MENSAJE DE BIENVENIDA Y LA PREGUNTA 1)
         if (texto.includes('encuesta de patitas sos')) {
             if (sesionesUsuario[chatId] && sesionesUsuario[chatId].temporizador) {
                 clearTimeout(sesionesUsuario[chatId].temporizador);
@@ -125,7 +125,7 @@ async function iniciarBot() {
                 }, TIEMPO_MAXIMO)
             };
             
-            const respuestaInicial = '🐶 ¿Te interesaría un servicio de paseo de perros? 🐾\n\n*Responde solo con el número de tu opción:*\n1️⃣ ✅ SÍ\n2️⃣ ❌ NO';
+            const respuestaInicial = '¡Hola! 🐶 Gracias por ayudarnos con PATITAS SOS. Queremos ofrecer paseos y cuidados en Cerro de Pasco para financiar el rescate de perritos de la calle.\n\n¿Nos regalas 1 minuto?\n\n🐶 ¿Te interesaría un servicio de paseo de perros? 🐾\n\n*Responde solo con el número de tu opción:*\n1️⃣ ✅ SÍ\n2️⃣ ❌ NO';
             
             try {
                 await sock.sendMessage(chatId, { 
