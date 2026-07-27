@@ -174,7 +174,7 @@ async function iniciarBot() {
                             p1: usuario.respuestas[0],
                             p2: usuario.respuestas[1],
                             p3: usuario.respuestas[2],
-                            fecha: new Date().toLocaleString()
+                            fecha: new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })
                         });
                     }
                 } catch (error) {
