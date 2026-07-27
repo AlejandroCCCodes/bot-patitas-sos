@@ -112,7 +112,7 @@ async function iniciarBot() {
         const texto = mensajeTexto.trim().toLowerCase();
 
         // 1. DISPARADOR INICIAL (ENVÍA intro.jpg CON EL MENSAJE DE BIENVENIDA Y LA PREGUNTA 1)
-        if (texto.includes('encuesta de patitas sos')) {
+        if (texto.includes('ENCUESTA PATITAS SOS')) {
             if (sesionesUsuario[chatId] && sesionesUsuario[chatId].temporizador) {
                 clearTimeout(sesionesUsuario[chatId].temporizador);
             }
