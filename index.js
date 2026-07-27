@@ -1,10 +1,11 @@
 const http = require('http');
+const fs = require('fs'); // Módulo para leer archivos locales como intro.jpg
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
 
-let ultimoQR = ''; // Variable para almacenar el código QR para la web
+let ultimoQR = ''; 
 let sock = null;
 
 // --- 1. SERVIDOR WEB (Muestra el QR en tu URL de Render) ---
@@ -56,11 +57,9 @@ async function conectarBD() {
 
 conectarBD();
 
-// --- 3. BOT DE WHATSAPP (Con versión automática de WhatsApp) ---
+// --- 3. BOT DE WHATSAPP ---
 async function iniciarBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
-    
-    // Obtiene la versión más reciente de WhatsApp Web para evitar el error 405
     const { version } = await fetchLatestBaileysVersion();
 
     sock = makeWASocket({
@@ -100,9 +99,6 @@ async function iniciarBot() {
         }
     });
 
-    // (Tus manejadores de mensajes y MongoDB continúan abajo...)
-    // (El resto de tus eventos de mensajes y MongoDB se mantienen igual aquí abajo...)
-
     const sesionesUsuario = {};
     const TIEMPO_MAXIMO = 5 * 60 * 1000;
 
@@ -115,7 +111,7 @@ async function iniciarBot() {
         const mensajeTexto = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
         const texto = mensajeTexto.trim().toLowerCase();
 
-        // 1. DISPARADOR INICIAL
+        // 1. DISPARADOR INICIAL (ENVÍA intro.jpg DESDE EL REPOSITORIO)
         if (texto.includes('encuesta de patitas sos')) {
             if (sesionesUsuario[chatId] && sesionesUsuario[chatId].temporizador) {
                 clearTimeout(sesionesUsuario[chatId].temporizador);
@@ -131,7 +127,17 @@ async function iniciarBot() {
             
             const respuestaInicial = '¡Hola! 🐶 Gracias por ayudarnos con PATITAS SOS. Queremos ofrecer paseos y cuidados en Cerro de Pasco para financiar el rescate de perritos de la calle.\n\n¿Nos regalas 1 minuto? *Respóndeme solo con el número de tu opción (1, 2 o 3):*\n\n*Pregunta 1:* ¿Con qué frecuencia tienes tiempo para pasear a tu perrito?\n1️⃣ Todos los días\n2️⃣ 2 a 3 veces por semana\n3️⃣ Casi nunca por falta de tiempo';
             
-            await sock.sendMessage(chatId, { text: respuestaInicial });
+            try {
+                // Lee la imagen 'intro.jpg' directamente de la carpeta del proyecto en Render/GitHub
+                await sock.sendMessage(chatId, { 
+                    image: fs.readFileSync('./intro.jpg'), 
+                    caption: respuestaInicial 
+                });
+            } catch (error) {
+                console.error("❌ No se pudo enviar la imagen intro.jpg:", error);
+                // Si por alguna razón no encuentra la imagen, envía al menos el texto para que el flujo no se rompa
+                await sock.sendMessage(chatId, { text: respuestaInicial });
+            }
             return;
         }
 
