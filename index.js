@@ -111,7 +111,7 @@ async function iniciarBot() {
         const mensajeTexto = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
         const texto = mensajeTexto.trim().toLowerCase();
 
-        // 1. DISPARADOR INICIAL (ENVÍA intro.jpg DESDE EL REPOSITORIO)
+        // 1. DISPARADOR INICIAL (ENVÍA intro.jpg Y PREGUNTA 1)
         if (texto.includes('encuesta de patitas sos')) {
             if (sesionesUsuario[chatId] && sesionesUsuario[chatId].temporizador) {
                 clearTimeout(sesionesUsuario[chatId].temporizador);
@@ -125,17 +125,15 @@ async function iniciarBot() {
                 }, TIEMPO_MAXIMO)
             };
             
-            const respuestaInicial = '¡Hola! 🐶 Gracias por ayudarnos con PATITAS SOS. Queremos ofrecer paseos y cuidados en Cerro de Pasco para financiar el rescate de perritos de la calle.\n\n¿Nos regalas 1 minuto? *Respóndeme solo con el número de tu opción (1, 2 o 3):*\n\n*Pregunta 1:* ¿Con qué frecuencia tienes tiempo para pasear a tu perrito?\n1️⃣ Todos los días\n2️⃣ 2 a 3 veces por semana\n3️⃣ Casi nunca por falta de tiempo';
+            const respuestaInicial = '🐶 ¿Te interesaría un servicio de paseo de perros? 🐾\n\n*Responde solo con el número de tu opción:*\n1️⃣ ✅ SÍ\n2️⃣ ❌ NO';
             
             try {
-                // Lee la imagen 'intro.jpg' directamente de la carpeta del proyecto en Render/GitHub
                 await sock.sendMessage(chatId, { 
                     image: fs.readFileSync('./intro.jpg'), 
                     caption: respuestaInicial 
                 });
             } catch (error) {
                 console.error("❌ No se pudo enviar la imagen intro.jpg:", error);
-                // Si por alguna razón no encuentra la imagen, envía al menos el texto para que el flujo no se rompa
                 await sock.sendMessage(chatId, { text: respuestaInicial });
             }
             return;
@@ -147,39 +145,52 @@ async function iniciarBot() {
             clearTimeout(usuario.temporizador);
             usuario.temporizador = setTimeout(() => { delete sesionesUsuario[chatId]; }, TIEMPO_MAXIMO);
 
+            // Pregunta 1 -> Salta a Pregunta 2
             if (usuario.paso === 1) {
-                if (['1', '2', '3'].includes(texto)) {
+                if (['1', '2'].includes(texto)) {
                     usuario.respuestas.push(texto);
                     usuario.paso = 2;
-                    await sock.sendMessage(chatId, { text: '¡Entendido! 📝\n\n*Pregunta 2:* Sabiendo cómo es el clima aquí en Cerro de Pasco, ¿el frío o la lluvia te impiden sacarlo a pasear?\n1️⃣ Sí, mucho 🥶\n2️⃣ A veces ⛅\n3️⃣ No, sale igual ☀️' });
+                    await sock.sendMessage(chatId, { text: '💸 ¿Cuánto estarías dispuesto(a) a pagar por un paseo de 45 a 60 minutos? ⏱️\n\n*Responde solo con el número de tu opción:*\n1️⃣ 🪙 Menos de S/10\n2️⃣ 💵 S/10 a S/15\n3️⃣ 💰 Más de S/15' });
                 }
             } 
+            // Pregunta 2 -> Salta a Pregunta 3
             else if (usuario.paso === 2) {
                 if (['1', '2', '3'].includes(texto)) {
                     usuario.respuestas.push(texto);
                     usuario.paso = 3;
-                    await sock.sendMessage(chatId, { text: '¡Excelente! 🚀\n\n*Pregunta 3:* Si existiera un servicio de total confianza para pasear o cuidar a tu mascota en casa, y supieras que tu pago ayuda a perros rescatados, ¿lo probarías?\n1️⃣ ¡Sí, de todas maneras!\n2️⃣ Tal vez (depende del precio)\n3️⃣ No, prefiero hacerlo yo' });
+                    await sock.sendMessage(chatId, { text: '🛡️ ¿Qué beneficios te darían más confianza? ✨\n\n*Responde solo con el número de tu opción:*\n1️⃣ 📍 Ubicación en tiempo real\n2️⃣ 📸 Fotos o videos durante el paseo\n3️⃣ 🏡 Recojo y retorno a domicilio' });
                 }
             } 
+            // Pregunta 3 -> Salta a Pregunta 4
             else if (usuario.paso === 3) {
                 if (['1', '2', '3'].includes(texto)) {
                     usuario.respuestas.push(texto);
                     usuario.paso = 4;
-                    await sock.sendMessage(chatId, { text: '¡Casi listos! 📝\n\n*Último paso:* Para poder avisarte cuando lancemos oficialmente nuestros servicios, por favor *escribe aquí abajo tu número de celular o WhatsApp*:' });
+                    await sock.sendMessage(chatId, { text: '📅 ¿Con qué frecuencia lo usarías? 🐕\n\n*Responde solo con el número de tu opción:*\n1️⃣ ☀️ Todos los días\n2️⃣ 🏃 2 o 3 veces por semana\n3️⃣ 🗓️ Una vez por semana' });
                 }
             }
+            // Pregunta 4 -> Salta a Pregunta 5 (Distrito escrito en texto)
             else if (usuario.paso === 4) {
-                let numeroEscrito = mensajeTexto.trim(); 
+                if (['1', '2', '3'].includes(texto)) {
+                    usuario.respuestas.push(texto);
+                    usuario.paso = 5;
+                    await sock.sendMessage(chatId, { text: '🗺️ ¿En qué distrito o zona vives? 🏡\n\n*Escribe tu respuesta aquí abajo:*' });
+                }
+            }
+            // Pregunta 5 (Distrito final) -> Guarda todo en MongoDB y se despide
+            else if (usuario.paso === 5) {
+                let distritoEscrito = mensajeTexto.trim(); 
                 const nombre = msg.pushName || 'Amigo/a de las patitas';
 
                 try {
                     if (dbCollection) {
                         await dbCollection.insertOne({
                             nombre: nombre,
-                            telefono: numeroEscrito,
                             p1: usuario.respuestas[0],
                             p2: usuario.respuestas[1],
                             p3: usuario.respuestas[2],
+                            p4: usuario.respuestas[3],
+                            distrito: distritoEscrito,
                             fecha: new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })
                         });
                     }
@@ -187,7 +198,8 @@ async function iniciarBot() {
                     console.error("❌ Error al insertar el registro:", error);
                 }
 
-                await sock.sendMessage(chatId, { text: `¡Listo, ${nombre}! Has ayudado muchísimo a que PATITAS SOS sea una realidad muy pronto. 🐾 Guardaremos tu número (${numeroEscrito}). ¡Que tengan un gran día! ✨` });
+                const mensajeFinal = '¡Agradecemos mucho tu participación! 🌟 Tus respuestas nos ayudarán a brindarte la mejor experiencia y seguridad posible. 🛡️\n\nTe estaremos avisando cuando lancemos el servicio. 🏡 ¡Que tengas un excelente día!';
+                await sock.sendMessage(chatId, { text: mensajeFinal });
                 
                 clearTimeout(usuario.temporizador);
                 delete sesionesUsuario[chatId];
